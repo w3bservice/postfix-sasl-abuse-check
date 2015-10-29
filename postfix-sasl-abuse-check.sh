@@ -7,12 +7,14 @@ function checkIt()
 {
 	local q=$1
 	q="${q//[^A-Z0-9]/}"
-	adr=$( ${postcat} -q ${q} )
-	sasl=$( echo "${adr}" | egrep -o "sasl_username\=.*" | awk '{ print $1 }' | sed 's/sasl_username\=//' )
-	sender=$( echo "${adr}" | egrep "^sender\:" | awk '{ print $NF }' )
-
+	res=$( ${postcat} -q ${q} )
+	sasl=$( echo "${res}" | egrep -o "\: sasl_username\=.*" | awk -F"=" '{ print $NF }' )
+	sender=$( echo "${res}" | egrep "^sender\:" | awk '{ print $NF }' )
+	client_name=$( echo "${res}" | : egrep -o "\: client_name=.*" | awk -F"=" '{ print $NF }' )
+	client_addr=$( echo "${res}" | : egrep -o "\: client_address=.*" | awk -F"=" '{ print $NF }' )
+	
 	if [ "${sasl}" != "${sender}" ]; then
-		echo "${q}: [SPAM] Might be spam, sender (${sender}) and auth-user (${sasl}) doesn't match."
+		echo "${q}: [SPAM] Might be spam, sender (${sender}) and auth-user (${sasl}) doesn't match. (client: ${client_addr} [${client_name}])"
 	else
 		echo "${q}: [OK] sender (${sender}) and auth-user (${sasl}) matches."
 	fi
